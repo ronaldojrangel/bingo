@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 type GameType = '75' | '90';
 type GameState = 'waiting' | 'playing' | 'finished';
@@ -45,6 +45,11 @@ export const BingoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [winners, setWinners] = useState<string[]>([]);
   const [maxWinners, setMaxWinners] = useState(1);
   const [winCondition, setWinCondition] = useState<'line' | 'column' | 'full'>('line');
+
+  // Generate a random 8-digit numeric code
+  const generateNumericCode = () => {
+    return Math.floor(10000000 + Math.random() * 90000000).toString();
+  };
 
   const generateBingoCard = (maxNumber: number) => {
     const numbersPerColumn = maxNumber / 5;
@@ -120,6 +125,19 @@ export const BingoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const finishGame = () => {
     setGameState('finished');
   };
+
+  // Poll for new players every 5 seconds
+  useEffect(() => {
+    if (gameState === 'waiting') {
+      const interval = setInterval(() => {
+        // Here you would typically make an API call to fetch updated player list
+        // For now, we'll just log that we're checking for new players
+        console.log('Checking for new players...');
+      }, 5000);
+
+      return () => clearInterval(interval);
+    }
+  }, [gameState]);
 
   return (
     <BingoContext.Provider

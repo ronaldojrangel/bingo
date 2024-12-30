@@ -22,7 +22,7 @@ const GameSetup = () => {
   const { toast } = useToast();
 
   const handleCreateGame = (type: '75' | '90') => {
-    const newGameCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const newGameCode = Math.floor(10000000 + Math.random() * 90000000).toString();
     setContextGameCode(newGameCode);
     setGameType(type);
     setIsAdmin(true);
@@ -35,10 +35,10 @@ const GameSetup = () => {
   };
 
   const handleJoinGame = () => {
-    if (gameCode.length < 6) {
+    if (gameCode.length !== 8 || !/^\d+$/.test(gameCode)) {
       toast({
         title: "Invalid Code",
-        description: "Please enter a valid game code",
+        description: "Please enter a valid 8-digit game code",
         variant: "destructive",
       });
       return;
@@ -51,7 +51,7 @@ const GameSetup = () => {
       });
       return;
     }
-    setContextGameCode(gameCode.toUpperCase());
+    setContextGameCode(gameCode);
     setIsAdmin(false);
     addPlayer(playerName);
     toast({
@@ -118,11 +118,15 @@ const GameSetup = () => {
             <h3 className="text-lg font-semibold text-center">Join Game</h3>
             <div className="space-y-2">
               <Input
-                placeholder="Enter Game Code"
+                placeholder="Enter 8-digit Game Code"
                 value={gameCode}
-                onChange={(e) => setGameCode(e.target.value.toUpperCase())}
-                maxLength={6}
-                className="text-center uppercase"
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, '').slice(0, 8);
+                  setGameCode(value);
+                }}
+                maxLength={8}
+                className="text-center"
+                type="number"
               />
               <Input
                 placeholder="Enter Your Name"
