@@ -2,12 +2,23 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useBingo } from '@/contexts/BingoContext';
 import { useToast } from '@/hooks/use-toast';
 
 const GameSetup = () => {
   const [gameCode, setGameCode] = useState('');
-  const { setGameType, setGameCode: setContextGameCode, setIsAdmin } = useBingo();
+  const [playerName, setPlayerName] = useState('');
+  const [maxWinners, setMaxWinners] = useState('1');
+  const [winCondition, setWinCondition] = useState<'line' | 'column' | 'full'>('line');
+  const { 
+    setGameType, 
+    setGameCode: setContextGameCode, 
+    setIsAdmin, 
+    addPlayer,
+    setMaxWinners: setContextMaxWinners,
+    setWinCondition: setContextWinCondition
+  } = useBingo();
   const { toast } = useToast();
 
   const handleCreateGame = (type: '75' | '90') => {
@@ -15,6 +26,8 @@ const GameSetup = () => {
     setContextGameCode(newGameCode);
     setGameType(type);
     setIsAdmin(true);
+    setContextMaxWinners(Number(maxWinners));
+    setContextWinCondition(winCondition);
     toast({
       title: "Game Created!",
       description: `Your game code is: ${newGameCode}`,
@@ -30,8 +43,17 @@ const GameSetup = () => {
       });
       return;
     }
+    if (!playerName.trim()) {
+      toast({
+        title: "Invalid Name",
+        description: "Please enter your name",
+        variant: "destructive",
+      });
+      return;
+    }
     setContextGameCode(gameCode.toUpperCase());
     setIsAdmin(false);
+    addPlayer(playerName);
     toast({
       title: "Joining Game",
       description: "Waiting for admin to start the game",
@@ -49,19 +71,47 @@ const GameSetup = () => {
         <CardContent className="space-y-6">
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-center">Create New Game</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <Button
-                onClick={() => handleCreateGame('75')}
-                className="bg-bingo-accent text-bingo-header hover:bg-bingo-accent/90"
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <Button
+                  onClick={() => handleCreateGame('75')}
+                  className="bg-bingo-accent text-bingo-header hover:bg-bingo-accent/90"
+                >
+                  75 Numbers
+                </Button>
+                <Button
+                  onClick={() => handleCreateGame('90')}
+                  className="bg-bingo-accent text-bingo-header hover:bg-bingo-accent/90"
+                >
+                  90 Numbers
+                </Button>
+              </div>
+              <Select
+                value={maxWinners}
+                onValueChange={setMaxWinners}
               >
-                75 Numbers
-              </Button>
-              <Button
-                onClick={() => handleCreateGame('90')}
-                className="bg-bingo-accent text-bingo-header hover:bg-bingo-accent/90"
+                <SelectTrigger>
+                  <SelectValue placeholder="Number of Winners" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1 Winner</SelectItem>
+                  <SelectItem value="2">2 Winners</SelectItem>
+                  <SelectItem value="3">3 Winners</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select
+                value={winCondition}
+                onValueChange={(value: 'line' | 'column' | 'full') => setWinCondition(value)}
               >
-                90 Numbers
-              </Button>
+                <SelectTrigger>
+                  <SelectValue placeholder="Win Condition" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="line">Line</SelectItem>
+                  <SelectItem value="column">Column</SelectItem>
+                  <SelectItem value="full">Full Card</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <div className="space-y-4">
@@ -73,6 +123,12 @@ const GameSetup = () => {
                 onChange={(e) => setGameCode(e.target.value.toUpperCase())}
                 maxLength={6}
                 className="text-center uppercase"
+              />
+              <Input
+                placeholder="Enter Your Name"
+                value={playerName}
+                onChange={(e) => setPlayerName(e.target.value)}
+                className="text-center"
               />
               <Button
                 onClick={handleJoinGame}
