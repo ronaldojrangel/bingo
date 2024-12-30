@@ -1,8 +1,7 @@
 import React from 'react';
-import { BingoProvider } from '@/contexts/BingoContext';
+import { BingoProvider, useBingo } from '@/contexts/BingoContext';
 import GameSetup from '@/components/GameSetup';
 import BingoCard from '@/components/BingoCard';
-import { useBingo } from '@/contexts/BingoContext';
 
 const GameContent = () => {
   const { gameCode } = useBingo();
@@ -17,7 +16,9 @@ const GameContent = () => {
 const Index = () => {
   return (
     <BingoProvider>
-      <GameContent />
+      <div className="min-h-screen bg-gray-50">
+        <GameContent />
+      </div>
     </BingoProvider>
   );
 };
