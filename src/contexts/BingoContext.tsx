@@ -46,24 +46,29 @@ export const BingoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [maxWinners, setMaxWinners] = useState(1);
   const [winCondition, setWinCondition] = useState<'line' | 'column' | 'full'>('line');
 
+  const generateBingoCard = (maxNumber: number) => {
+    const numbersPerColumn = maxNumber / 5;
+    const card = Array.from({ length: 5 }, (_, colIndex) => {
+      const start = colIndex * numbersPerColumn + 1;
+      const end = start + numbersPerColumn - 1;
+      return Array.from({ length: 5 }, (_, rowIndex) => {
+        // Make center space empty (position 2,2)
+        if (colIndex === 2 && rowIndex === 2) {
+          return 0; // 0 represents empty space
+        }
+        return Math.floor(Math.random() * (end - start + 1)) + start;
+      });
+    });
+    return card;
+  };
+
   const addPlayer = (name: string) => {
     const newPlayer: Player = {
       name,
       id: Math.random().toString(36).substring(2),
       card: generateBingoCard(gameType === '75' ? 75 : 90),
     };
-    setPlayers((prev) => [...prev, newPlayer]);
-  };
-
-  const generateBingoCard = (maxNumber: number) => {
-    const numbersPerColumn = maxNumber / 5;
-    return Array.from({ length: 5 }, (_, colIndex) => {
-      const start = colIndex * numbersPerColumn + 1;
-      const end = start + numbersPerColumn - 1;
-      return Array.from({ length: 5 }, () => 
-        Math.floor(Math.random() * (end - start + 1)) + start
-      );
-    });
+    setPlayers(prev => [...prev, newPlayer]);
   };
 
   const drawNumber = () => {

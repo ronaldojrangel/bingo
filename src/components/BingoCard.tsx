@@ -59,6 +59,19 @@ const BingoCard = () => {
           </h2>
         </div>
 
+        {isAdmin && gameState === 'waiting' && (
+          <div className="p-4 bg-gray-100">
+            <h3 className="font-semibold mb-2">Players in Game:</h3>
+            <ul className="space-y-1">
+              {players.map((player) => (
+                <li key={player.id} className="text-sm">
+                  {player.name}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         <div className="grid grid-cols-5 gap-1 p-2">
           {letters.map((letter, i) => (
             <div
@@ -74,13 +87,13 @@ const BingoCard = () => {
                 key={`${colIndex}-${rowIndex}`}
                 className={cn(
                   "aspect-square flex items-center justify-center text-lg font-semibold border border-gray-200",
-                  drawnNumbers.includes(number)
+                  number === 0 ? "bg-gray-200" : drawnNumbers.includes(number)
                     ? "bg-bingo-marked text-white"
                     : "bg-white text-bingo-number",
                   winners.includes(players[0]?.id) && "animate-pulse bg-green-500"
                 )}
               >
-                {number}
+                {number !== 0 ? number : ''}
               </div>
             ))
           )}
