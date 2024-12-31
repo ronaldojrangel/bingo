@@ -6,6 +6,8 @@ import JoinGame from './components/JoinGame';
 import { BingoProvider } from './contexts/BingoContext';
 import AdminPage from './components/AdminPage';
 import Game from './components/Game';
+import RegisterForm from './components/RegisterForm';
+import GameHistory from './components/GameHistory';
 
 const App = () => {
   return (
@@ -17,6 +19,8 @@ const App = () => {
           <Route path="/join-game" element={<JoinGame />} />
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/game" element={<Game />} />
+          <Route path="/register" element={<RegisterForm />} />
+          <Route path="/history" element={<GameHistory />} />
         </Routes>
       </Router>
     </BingoProvider>
