@@ -98,13 +98,13 @@ const BingoCard = () => {
 
         <div className="p-4 bg-bingo-header text-white">
           <h2 className="text-2xl font-bold">
-            {gameState === 'waiting' && 'Waiting for game to start...'}
+            {gameState === 'pending' && 'Waiting for game to start...'}
             {gameState === 'playing' && `Current Number: ${currentNumber || 'Drawing...'}`}
             {gameState === 'finished' && 'Game Finished!'}
           </h2>
         </div>
 
-        {isAdmin && gameState === 'waiting' && (
+        {isAdmin && gameState === 'pending' && (
           <div className="p-4 bg-gray-100">
             <h3 className="font-semibold mb-2">Players in Game:</h3>
             <ul className="space-y-1">
@@ -146,7 +146,7 @@ const BingoCard = () => {
 
         {isAdmin && (
           <div className="p-4 space-y-4">
-            {gameState === 'waiting' && (
+            {gameState === 'pending' && (
               <Button
                 onClick={handleStartGame}
                 className="w-full bg-green-500 hover:bg-green-600"

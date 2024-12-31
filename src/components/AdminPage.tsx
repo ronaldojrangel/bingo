@@ -82,7 +82,7 @@ const AdminPage = () => {
             <div className="mt-4 flex flex-col gap-2">
               <Button 
                 onClick={handleStartGame} 
-                disabled={gameState !== 'waiting'}
+                disabled={gameState !== 'pending'}
                 className="bg-yellow-400 text-purple-900 hover:bg-yellow-500 font-semibold disabled:opacity-50"
               >
                 Iniciar Jogo
