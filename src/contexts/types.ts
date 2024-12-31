@@ -1,5 +1,5 @@
 export type GameType = '75' | '90';
-export type GameState = 'waiting' | 'playing' | 'finished';
+export type GameState = 'pending' | 'playing' | 'finished';
 
 export type Player = {
   id: string;

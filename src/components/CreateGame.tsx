@@ -68,7 +68,7 @@ const CreateGame = () => {
             type,
             max_winners: Number(maxWinners),
             win_condition: winCondition,
-            status: 'pending', // Changed from 'waiting' to 'pending' to match the constraint
+            status: 'pending',
             admin_id: userId
           }
         ]);
@@ -84,7 +84,7 @@ const CreateGame = () => {
       setIsAdmin(true);
       setContextMaxWinners(Number(maxWinners));
       setContextWinCondition(winCondition);
-      setGameState('pending'); // Changed from 'waiting' to 'pending' to match the constraint
+      setGameState('pending');
 
       // Add the administrator as a user
       await addPlayer('Administrador');
