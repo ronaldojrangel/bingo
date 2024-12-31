@@ -33,11 +33,6 @@ const CreateGame = () => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        toast({
-          title: "Não autorizado",
-          description: "Você precisa estar logado para criar um jogo",
-          variant: "destructive",
-        });
         navigate('/login');
         return;
       }
@@ -45,16 +40,12 @@ const CreateGame = () => {
     };
 
     checkAuth();
-  }, [navigate, toast]);
+  }, [navigate]);
 
   const handleCreateGame = async (type: "75" | "90") => {
     try {
       if (!userId) {
-        toast({
-          title: "Erro",
-          description: "Você precisa estar logado para criar um jogo",
-          variant: "destructive",
-        });
+        navigate('/login');
         return;
       }
 
@@ -116,7 +107,7 @@ const CreateGame = () => {
   };
 
   if (!userId) {
-    return null; // Don't render anything while checking authentication
+    return null;
   }
 
   return (
