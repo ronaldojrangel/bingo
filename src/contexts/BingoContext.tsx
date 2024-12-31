@@ -3,11 +3,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { generateBingoCard, STORAGE_KEYS } from '@/utils/bingoUtils';
 import { BingoContextType, GameType, GameState, Player } from './types';
 import { useToast } from '@/hooks/use-toast';
+import { Toaster } from '@/components/ui/toaster';
 
 const BingoContext = createContext<BingoContextType | undefined>(undefined);
 
 export const BingoProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Move useToast inside the component
   const { toast } = useToast();
+  
   const [gameType, setGameType] = useState<GameType | null>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.GAME_TYPE);
     return saved ? JSON.parse(saved) : null;
@@ -333,6 +336,7 @@ export const BingoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         finishGame,
       }}
     >
+      <Toaster />
       {children}
     </BingoContext.Provider>
   );
