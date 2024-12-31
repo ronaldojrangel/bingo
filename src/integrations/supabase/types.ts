@@ -9,7 +9,145 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      bingo_games: {
+        Row: {
+          admin_id: string | null
+          code: string
+          created_at: string | null
+          id: string
+          max_winners: number | null
+          status: string | null
+          type: string
+          win_condition: string | null
+        }
+        Insert: {
+          admin_id?: string | null
+          code: string
+          created_at?: string | null
+          id?: string
+          max_winners?: number | null
+          status?: string | null
+          type: string
+          win_condition?: string | null
+        }
+        Update: {
+          admin_id?: string | null
+          code?: string
+          created_at?: string | null
+          id?: string
+          max_winners?: number | null
+          status?: string | null
+          type?: string
+          win_condition?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bingo_games_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_players: {
+        Row: {
+          board: Json
+          game_id: string | null
+          id: string
+          is_winner: boolean | null
+          joined_at: string | null
+          player_id: string | null
+          progress: Json | null
+        }
+        Insert: {
+          board: Json
+          game_id?: string | null
+          id?: string
+          is_winner?: boolean | null
+          joined_at?: string | null
+          player_id?: string | null
+          progress?: Json | null
+        }
+        Update: {
+          board?: Json
+          game_id?: string | null
+          id?: string
+          is_winner?: boolean | null
+          joined_at?: string | null
+          player_id?: string | null
+          progress?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_players_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "bingo_games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_players_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      numbers_drawn: {
+        Row: {
+          drawn_at: string | null
+          game_id: string | null
+          id: string
+          number: number
+        }
+        Insert: {
+          drawn_at?: string | null
+          game_id?: string | null
+          id?: string
+          number: number
+        }
+        Update: {
+          drawn_at?: string | null
+          game_id?: string | null
+          id?: string
+          number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "numbers_drawn_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "bingo_games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      users: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string
+          name: string
+          role: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          name: string
+          role?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+          role?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

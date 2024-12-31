@@ -11,12 +11,11 @@ import {
 import { useBingo } from "@/contexts/BingoContext";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const CreateGame = () => {
   const [maxWinners, setMaxWinners] = useState("1");
-  const [winCondition, setWinCondition] = useState<"line" | "column" | "full">(
-    "line"
-  );
+  const [winCondition, setWinCondition] = useState<"line" | "column" | "full">("line");
   const {
     setGameType,
     setGameCode: setContextGameCode,
@@ -24,38 +23,64 @@ const CreateGame = () => {
     setMaxWinners: setContextMaxWinners,
     setWinCondition: setContextWinCondition,
     setGameState,
+    addPlayer,
   } = useBingo();
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const handleCreateGame = (type: "75" | "90") => {
-    // Limpar localStorage de jogos anteriores
-    localStorage.removeItem('bingo_players');
-    localStorage.removeItem('bingo_drawn_numbers');
-    localStorage.removeItem('bingo_current_number');
-    localStorage.removeItem('bingo_winners');
-    localStorage.removeItem('bingo_current_player');
+  const handleCreateGame = async (type: "75" | "90") => {
+    try {
+      // Limpar localStorage de jogos anteriores
+      localStorage.removeItem('bingo_players');
+      localStorage.removeItem('bingo_drawn_numbers');
+      localStorage.removeItem('bingo_current_number');
+      localStorage.removeItem('bingo_winners');
+      localStorage.removeItem('bingo_current_player');
 
-    // Gerar novo código do jogo
-    const newGameCode = Math.floor(
-      10000000 + Math.random() * 90000000
-    ).toString();
+      // Gerar novo código do jogo
+      const gameCode = Math.floor(10000000 + Math.random() * 90000000).toString();
 
-    // Configurar o novo jogo
-    setContextGameCode(newGameCode);
-    setGameType(type);
-    setIsAdmin(true);
-    setContextMaxWinners(Number(maxWinners));
-    setContextWinCondition(winCondition);
-    setGameState('waiting'); // Definir estado inicial como 'waiting'
+      // Criar novo jogo no Supabase
+      const { error: gameError } = await supabase
+        .from('bingo_games')
+        .insert([
+          {
+            code: gameCode,
+            type,
+            max_winners: Number(maxWinners),
+            win_condition: winCondition,
+            status: 'waiting'
+          }
+        ]);
 
-    toast({
-      title: "Jogo Criado!",
-      description: `Seu código do jogo é: ${newGameCode}`,
-    });
+      if (gameError) throw gameError;
 
-    // Navegar para a página de admin
-    navigate('/admin');
+      // Configurar o novo jogo no contexto
+      setContextGameCode(gameCode);
+      setGameType(type);
+      setIsAdmin(true);
+      setContextMaxWinners(Number(maxWinners));
+      setContextWinCondition(winCondition);
+      setGameState('waiting');
+
+      // Adicionar o administrador como um usuário
+      await addPlayer('Administrador');
+
+      toast({
+        title: "Jogo Criado!",
+        description: `Seu código do jogo é: ${gameCode}`,
+      });
+
+      // Navegar para a página de admin
+      navigate('/admin');
+    } catch (error: any) {
+      console.error('Error creating game:', error);
+      toast({
+        title: "Erro ao criar jogo",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   return (

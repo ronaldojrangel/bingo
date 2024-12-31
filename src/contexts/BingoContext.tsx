@@ -1,56 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-
-type GameType = '75' | '90';
-type GameState = 'waiting' | 'playing' | 'finished';
-type Player = {
-  name: string;
-  id: string;
-  card: number[][];
-};
-
-interface BingoContextType {
-  gameType: GameType | null;
-  gameState: GameState;
-  gameCode: string | null;
-  isAdmin: boolean;
-  players: Player[];
-  drawnNumbers: number[];
-  currentNumber: number | null;
-  winners: string[];
-  maxWinners: number;
-  winCondition: 'line' | 'column' | 'full';
-  setGameType: (type: GameType) => void;
-  setGameState: (state: GameState) => void;
-  setGameCode: (code: string) => void;
-  setIsAdmin: (isAdmin: boolean) => void;
-  addPlayer: (name: string) => void;
-  drawNumber: () => void;
-  addWinner: (playerId: string) => void;
-  setMaxWinners: (count: number) => void;
-  setWinCondition: (condition: 'line' | 'column' | 'full') => void;
-  startGame: () => void;
-  finishGame: () => void;
-}
+import { supabase } from '@/integrations/supabase/client';
+import { generateBingoCard, STORAGE_KEYS } from '@/utils/bingoUtils';
+import { BingoContextType, GameType, GameState, Player } from './types';
+import { useToast } from '@/hooks/use-toast';
 
 const BingoContext = createContext<BingoContextType | undefined>(undefined);
 
-// Chaves para o localStorage
-const STORAGE_KEYS = {
-  GAME_TYPE: 'bingo_game_type',
-  GAME_STATE: 'bingo_game_state',
-  GAME_CODE: 'bingo_game_code',
-  IS_ADMIN: 'bingo_is_admin',
-  PLAYERS: 'bingo_players',
-  DRAWN_NUMBERS: 'bingo_drawn_numbers',
-  CURRENT_NUMBER: 'bingo_current_number',
-  WINNERS: 'bingo_winners',
-  MAX_WINNERS: 'bingo_max_winners',
-  WIN_CONDITION: 'bingo_win_condition',
-  CURRENT_PLAYER: 'bingo_current_player'
-};
-
 export const BingoProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Inicializar estados com dados do localStorage
+  const { toast } = useToast();
   const [gameType, setGameType] = useState<GameType | null>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.GAME_TYPE);
     return saved ? JSON.parse(saved) : null;
@@ -101,7 +58,7 @@ export const BingoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return saved ? JSON.parse(saved) : 'line';
   });
 
-  // Salvar estados no localStorage quando mudarem
+  // Save states to localStorage
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.GAME_TYPE, JSON.stringify(gameType));
   }, [gameType]);
@@ -142,102 +99,203 @@ export const BingoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     localStorage.setItem(STORAGE_KEYS.WIN_CONDITION, JSON.stringify(winCondition));
   }, [winCondition]);
 
-  // Funções existentes com persistência
-  const generateNumericCode = () => {
-    return Math.floor(10000000 + Math.random() * 90000000).toString();
-  };
+  // Subscribe to real-time updates
+  useEffect(() => {
+    if (!gameCode) return;
 
-  const generateBingoCard = (maxNumber: number) => {
-    const numbersPerColumn = Math.floor(maxNumber / 5);
-    const card: number[][] = [];
-
-    for (let col = 0; col < 5; col++) {
-      const start = col * numbersPerColumn + 1;
-      const end = col === 4 ? maxNumber : start + numbersPerColumn - 1;
-      
-      const columnNumbers = new Set<number>();
-      while (columnNumbers.size < 5) {
-        const num = Math.floor(Math.random() * (end - start + 1)) + start;
-        columnNumbers.add(num);
-      }
-      
-      const numbers = Array.from(columnNumbers).sort((a, b) => a - b);
-      card[col] = numbers;
-    }
-
-    const transposedCard = Array.from({ length: 5 }, (_, row) =>
-      Array.from({ length: 5 }, (_, col) => {
-        if (row === 2 && col === 2) {
-          return 0;
+    const channel = supabase
+      .channel('game-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'game_players',
+          filter: `game_id=eq.${gameCode}`,
+        },
+        (payload) => {
+          console.log('Game players update:', payload);
+          // Update players list
+          fetchPlayers();
         }
-        return card[col][row];
-      })
-    );
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'numbers_drawn',
+          filter: `game_id=eq.${gameCode}`,
+        },
+        (payload: any) => {
+          console.log('New number drawn:', payload);
+          const newNumber = payload.new.number;
+          setCurrentNumber(newNumber);
+          setDrawnNumbers(prev => [...prev, newNumber]);
+        }
+      )
+      .subscribe();
 
-    return transposedCard;
-  };
-
-  const addPlayer = (name: string) => {
-    const newPlayer: Player = {
-      name,
-      id: Math.random().toString(36).substring(2),
-      card: generateBingoCard(gameType === '75' ? 75 : 90),
+    return () => {
+      supabase.removeChannel(channel);
     };
+  }, [gameCode]);
 
-    // Atualizar a lista de jogadores
-    setPlayers(prev => {
-      const updatedPlayers = [...prev, newPlayer];
-      localStorage.setItem(STORAGE_KEYS.PLAYERS, JSON.stringify(updatedPlayers));
-      return updatedPlayers;
-    });
+  const fetchPlayers = async () => {
+    if (!gameCode) return;
 
-    // Se não for admin, salvar como jogador atual
-    if (!isAdmin) {
-      localStorage.setItem(STORAGE_KEYS.CURRENT_PLAYER, JSON.stringify(newPlayer));
+    const { data: gamePlayers, error } = await supabase
+      .from('game_players')
+      .select(`
+        id,
+        player_id,
+        board,
+        users (
+          name
+        )
+      `)
+      .eq('game_id', gameCode);
+
+    if (error) {
+      console.error('Error fetching players:', error);
+      return;
     }
+
+    const formattedPlayers = gamePlayers.map(gp => ({
+      id: gp.player_id,
+      name: gp.users.name,
+      card: gp.board
+    }));
+
+    setPlayers(formattedPlayers);
   };
 
-  const handleSetGameCode = (code: string) => {
-    setGameCode(code);
-    // Ao definir um novo código de jogo, garantir que o estado seja 'waiting'
-    setGameState('waiting');
-  };
+  const addPlayer = async (name: string) => {
+    try {
+      // First, create or get user
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .upsert([
+          { name, role: isAdmin ? 'admin' : 'player' }
+        ])
+        .select()
+        .single();
 
-  const handleSetIsAdmin = (admin: boolean) => {
-    setIsAdmin(admin);
-    if (!admin) {
-      // Se não for admin, limpar o jogador atual do localStorage
-      localStorage.removeItem(STORAGE_KEYS.CURRENT_PLAYER);
-    }
-  };
+      if (userError) throw userError;
 
-  const drawNumber = () => {
-    if (gameState !== 'playing') return;
-    
-    const maxNumber = gameType === '75' ? 75 : 90;
-    const availableNumbers = Array.from({ length: maxNumber }, (_, i) => i + 1)
-      .filter(n => !drawnNumbers.includes(n));
-    
-    if (availableNumbers.length === 0) return;
-    
-    const randomIndex = Math.floor(Math.random() * availableNumbers.length);
-    const newNumber = availableNumbers[randomIndex];
-    setCurrentNumber(newNumber);
-    setDrawnNumbers(prev => [...prev, newNumber]);
-    
-    checkWinners();
-  };
+      // Then, add player to game
+      const { error: gamePlayerError } = await supabase
+        .from('game_players')
+        .insert([
+          {
+            game_id: gameCode,
+            player_id: userData.id,
+            board: generateBingoCard(gameType === '75' ? 75 : 90)
+          }
+        ]);
 
-  const checkWinners = () => {
-    players.forEach((player) => {
-      const hasWon = player.card.some(row => 
-        row.every(num => drawnNumbers.includes(num))
-      );
-      
-      if (hasWon && !winners.includes(player.id)) {
-        addWinner(player.id);
+      if (gamePlayerError) throw gamePlayerError;
+
+      // Store current player info
+      if (!isAdmin) {
+        localStorage.setItem(STORAGE_KEYS.CURRENT_PLAYER, JSON.stringify(userData));
       }
-    });
+
+      await fetchPlayers();
+
+    } catch (error: any) {
+      console.error('Error adding player:', error);
+      toast({
+        title: "Erro ao entrar no jogo",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const startGame = async () => {
+    if (!gameCode || !isAdmin) return;
+
+    try {
+      const { error } = await supabase
+        .from('bingo_games')
+        .update({ status: 'playing' })
+        .eq('code', gameCode);
+
+      if (error) throw error;
+
+      setGameState('playing');
+      
+      toast({
+        title: "Jogo Iniciado!",
+        description: "O jogo começou. Você já pode sortear números.",
+      });
+    } catch (error: any) {
+      console.error('Error starting game:', error);
+      toast({
+        title: "Erro ao iniciar jogo",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const drawNumber = async () => {
+    if (!gameCode || !isAdmin || gameState !== 'playing') return;
+
+    try {
+      const maxNumber = gameType === '75' ? 75 : 90;
+      const availableNumbers = Array.from({ length: maxNumber }, (_, i) => i + 1)
+        .filter(n => !drawnNumbers.includes(n));
+      
+      if (availableNumbers.length === 0) return;
+      
+      const randomIndex = Math.floor(Math.random() * availableNumbers.length);
+      const newNumber = availableNumbers[randomIndex];
+
+      const { error } = await supabase
+        .from('numbers_drawn')
+        .insert([
+          { game_id: gameCode, number: newNumber }
+        ]);
+
+      if (error) throw error;
+
+    } catch (error: any) {
+      console.error('Error drawing number:', error);
+      toast({
+        title: "Erro ao sortear número",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const finishGame = async () => {
+    if (!gameCode || !isAdmin) return;
+
+    try {
+      const { error } = await supabase
+        .from('bingo_games')
+        .update({ status: 'finished' })
+        .eq('code', gameCode);
+
+      if (error) throw error;
+
+      setGameState('finished');
+      
+      toast({
+        title: "Jogo Finalizado",
+        description: "O jogo foi encerrado com sucesso.",
+      });
+    } catch (error: any) {
+      console.error('Error finishing game:', error);
+      toast({
+        title: "Erro ao finalizar jogo",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   const addWinner = (playerId: string) => {
@@ -247,16 +305,6 @@ export const BingoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         finishGame();
       }
     }
-  };
-
-  const startGame = () => {
-    if (players.length >= 2) {
-      setGameState('playing');
-    }
-  };
-
-  const finishGame = () => {
-    setGameState('finished');
   };
 
   return (
@@ -274,8 +322,8 @@ export const BingoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         winCondition,
         setGameType,
         setGameState,
-        setGameCode: handleSetGameCode,
-        setIsAdmin: handleSetIsAdmin,
+        setGameCode,
+        setIsAdmin,
         addPlayer,
         drawNumber,
         addWinner,
