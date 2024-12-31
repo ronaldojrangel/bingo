@@ -36,11 +36,42 @@ const CreateGame = () => {
         navigate('/login');
         return;
       }
+      
+      // Get or create user record
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select()
+        .eq('id', session.user.id)
+        .single();
+
+      if (!existingUser) {
+        const { error: createError } = await supabase
+          .from('users')
+          .insert([
+            {
+              id: session.user.id,
+              name: session.user.email?.split('@')[0] || 'Anonymous',
+              email: session.user.email,
+              role: 'admin'
+            }
+          ]);
+
+        if (createError) {
+          console.error('Error creating user:', createError);
+          toast({
+            title: "Error creating user profile",
+            description: createError.message,
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
       setUserId(session.user.id);
     };
 
     checkAuth();
-  }, [navigate]);
+  }, [navigate, toast]);
 
   const handleCreateGame = async (type: "75" | "90") => {
     try {
@@ -86,7 +117,7 @@ const CreateGame = () => {
       setContextWinCondition(winCondition);
       setGameState('pending');
 
-      // Add the administrator as a user
+      // Add the administrator as a player
       await addPlayer('Administrador');
 
       toast({
