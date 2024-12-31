@@ -1,33 +1,25 @@
 import React from 'react';
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import GameSetup from './components/GameSetup';
+import CreateGame from './components/CreateGame';
+import JoinGame from './components/JoinGame';
+import { BingoProvider } from './contexts/BingoContext';
+import AdminPage from './components/AdminPage';
+import Game from './components/Game';
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 1000,
-      retry: 1,
-    },
-  },
-});
-
-const App: React.FC = () => {
+const App = () => {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <BingoProvider>
+      <Router>
+        <Routes>
+          <Route path="/" element={<GameSetup />} />
+          <Route path="/create-game" element={<CreateGame />} />
+          <Route path="/join-game" element={<JoinGame />} />
+          <Route path="/admin" element={<AdminPage />} />
+          <Route path="/game" element={<Game />} />
+        </Routes>
+      </Router>
+    </BingoProvider>
   );
 };
 

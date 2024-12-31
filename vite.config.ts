@@ -11,12 +11,21 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
-    mode === 'development' &&
-    componentTagger(),
+    mode === 'development' && componentTagger(),
   ].filter(Boolean),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+  },
+  build: {
+    sourcemap: true,
+    commonjsOptions: {
+      sourceMap: false,
+    },
+  },
+  optimizeDeps: {
+    include: ['clsx'],
+    exclude: [],
   },
 }));

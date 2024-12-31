@@ -34,37 +34,147 @@ interface BingoContextType {
 
 const BingoContext = createContext<BingoContextType | undefined>(undefined);
 
-export const BingoProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [gameType, setGameType] = useState<GameType | null>(null);
-  const [gameState, setGameState] = useState<GameState>('waiting');
-  const [gameCode, setGameCode] = useState<string | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [players, setPlayers] = useState<Player[]>([]);
-  const [drawnNumbers, setDrawnNumbers] = useState<number[]>([]);
-  const [currentNumber, setCurrentNumber] = useState<number | null>(null);
-  const [winners, setWinners] = useState<string[]>([]);
-  const [maxWinners, setMaxWinners] = useState(1);
-  const [winCondition, setWinCondition] = useState<'line' | 'column' | 'full'>('line');
+// Chaves para o localStorage
+const STORAGE_KEYS = {
+  GAME_TYPE: 'bingo_game_type',
+  GAME_STATE: 'bingo_game_state',
+  GAME_CODE: 'bingo_game_code',
+  IS_ADMIN: 'bingo_is_admin',
+  PLAYERS: 'bingo_players',
+  DRAWN_NUMBERS: 'bingo_drawn_numbers',
+  CURRENT_NUMBER: 'bingo_current_number',
+  WINNERS: 'bingo_winners',
+  MAX_WINNERS: 'bingo_max_winners',
+  WIN_CONDITION: 'bingo_win_condition',
+  CURRENT_PLAYER: 'bingo_current_player'
+};
 
-  // Generate a random 8-digit numeric code
+export const BingoProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Inicializar estados com dados do localStorage
+  const [gameType, setGameType] = useState<GameType | null>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.GAME_TYPE);
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  const [gameState, setGameState] = useState<GameState>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.GAME_STATE);
+    return saved ? JSON.parse(saved) : 'waiting';
+  });
+
+  const [gameCode, setGameCode] = useState<string | null>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.GAME_CODE);
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  const [isAdmin, setIsAdmin] = useState(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.IS_ADMIN);
+    return saved ? JSON.parse(saved) : false;
+  });
+
+  const [players, setPlayers] = useState<Player[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.PLAYERS);
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [drawnNumbers, setDrawnNumbers] = useState<number[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.DRAWN_NUMBERS);
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [currentNumber, setCurrentNumber] = useState<number | null>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.CURRENT_NUMBER);
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  const [winners, setWinners] = useState<string[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.WINNERS);
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [maxWinners, setMaxWinners] = useState(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.MAX_WINNERS);
+    return saved ? JSON.parse(saved) : 1;
+  });
+
+  const [winCondition, setWinCondition] = useState<'line' | 'column' | 'full'>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.WIN_CONDITION);
+    return saved ? JSON.parse(saved) : 'line';
+  });
+
+  // Salvar estados no localStorage quando mudarem
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.GAME_TYPE, JSON.stringify(gameType));
+  }, [gameType]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.GAME_STATE, JSON.stringify(gameState));
+  }, [gameState]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.GAME_CODE, JSON.stringify(gameCode));
+  }, [gameCode]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.IS_ADMIN, JSON.stringify(isAdmin));
+  }, [isAdmin]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.PLAYERS, JSON.stringify(players));
+  }, [players]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.DRAWN_NUMBERS, JSON.stringify(drawnNumbers));
+  }, [drawnNumbers]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.CURRENT_NUMBER, JSON.stringify(currentNumber));
+  }, [currentNumber]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.WINNERS, JSON.stringify(winners));
+  }, [winners]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.MAX_WINNERS, JSON.stringify(maxWinners));
+  }, [maxWinners]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.WIN_CONDITION, JSON.stringify(winCondition));
+  }, [winCondition]);
+
+  // Funções existentes com persistência
   const generateNumericCode = () => {
     return Math.floor(10000000 + Math.random() * 90000000).toString();
   };
 
   const generateBingoCard = (maxNumber: number) => {
-    const numbersPerColumn = maxNumber / 5;
-    const card = Array.from({ length: 5 }, (_, colIndex) => {
-      const start = colIndex * numbersPerColumn + 1;
-      const end = start + numbersPerColumn - 1;
-      return Array.from({ length: 5 }, (_, rowIndex) => {
-        // Make center space empty (position 2,2)
-        if (colIndex === 2 && rowIndex === 2) {
-          return 0; // 0 represents empty space
+    const numbersPerColumn = Math.floor(maxNumber / 5);
+    const card: number[][] = [];
+
+    for (let col = 0; col < 5; col++) {
+      const start = col * numbersPerColumn + 1;
+      const end = col === 4 ? maxNumber : start + numbersPerColumn - 1;
+      
+      const columnNumbers = new Set<number>();
+      while (columnNumbers.size < 5) {
+        const num = Math.floor(Math.random() * (end - start + 1)) + start;
+        columnNumbers.add(num);
+      }
+      
+      const numbers = Array.from(columnNumbers).sort((a, b) => a - b);
+      card[col] = numbers;
+    }
+
+    const transposedCard = Array.from({ length: 5 }, (_, row) =>
+      Array.from({ length: 5 }, (_, col) => {
+        if (row === 2 && col === 2) {
+          return 0;
         }
-        return Math.floor(Math.random() * (end - start + 1)) + start;
-      });
-    });
-    return card;
+        return card[col][row];
+      })
+    );
+
+    return transposedCard;
   };
 
   const addPlayer = (name: string) => {
@@ -73,7 +183,32 @@ export const BingoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       id: Math.random().toString(36).substring(2),
       card: generateBingoCard(gameType === '75' ? 75 : 90),
     };
-    setPlayers(prev => [...prev, newPlayer]);
+
+    // Atualizar a lista de jogadores
+    setPlayers(prev => {
+      const updatedPlayers = [...prev, newPlayer];
+      localStorage.setItem(STORAGE_KEYS.PLAYERS, JSON.stringify(updatedPlayers));
+      return updatedPlayers;
+    });
+
+    // Se não for admin, salvar como jogador atual
+    if (!isAdmin) {
+      localStorage.setItem(STORAGE_KEYS.CURRENT_PLAYER, JSON.stringify(newPlayer));
+    }
+  };
+
+  const handleSetGameCode = (code: string) => {
+    setGameCode(code);
+    // Ao definir um novo código de jogo, garantir que o estado seja 'waiting'
+    setGameState('waiting');
+  };
+
+  const handleSetIsAdmin = (admin: boolean) => {
+    setIsAdmin(admin);
+    if (!admin) {
+      // Se não for admin, limpar o jogador atual do localStorage
+      localStorage.removeItem(STORAGE_KEYS.CURRENT_PLAYER);
+    }
   };
 
   const drawNumber = () => {
@@ -88,14 +223,12 @@ export const BingoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const randomIndex = Math.floor(Math.random() * availableNumbers.length);
     const newNumber = availableNumbers[randomIndex];
     setCurrentNumber(newNumber);
-    setDrawnNumbers((prev) => [...prev, newNumber]);
+    setDrawnNumbers(prev => [...prev, newNumber]);
     
     checkWinners();
   };
 
   const checkWinners = () => {
-    // Implementation will depend on win condition
-    // This is a simplified version checking for a full line
     players.forEach((player) => {
       const hasWon = player.card.some(row => 
         row.every(num => drawnNumbers.includes(num))
@@ -109,7 +242,7 @@ export const BingoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const addWinner = (playerId: string) => {
     if (winners.length < maxWinners) {
-      setWinners((prev) => [...prev, playerId]);
+      setWinners(prev => [...prev, playerId]);
       if (winners.length + 1 >= maxWinners) {
         finishGame();
       }
@@ -126,19 +259,6 @@ export const BingoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setGameState('finished');
   };
 
-  // Poll for new players every 5 seconds
-  useEffect(() => {
-    if (gameState === 'waiting') {
-      const interval = setInterval(() => {
-        // Here you would typically make an API call to fetch updated player list
-        // For now, we'll just log that we're checking for new players
-        console.log('Checking for new players...');
-      }, 5000);
-
-      return () => clearInterval(interval);
-    }
-  }, [gameState]);
-
   return (
     <BingoContext.Provider
       value={{
@@ -154,8 +274,8 @@ export const BingoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         winCondition,
         setGameType,
         setGameState,
-        setGameCode,
-        setIsAdmin,
+        setGameCode: handleSetGameCode,
+        setIsAdmin: handleSetIsAdmin,
         addPlayer,
         drawNumber,
         addWinner,
