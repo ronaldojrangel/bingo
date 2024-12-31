@@ -78,7 +78,7 @@ const RegisterForm = () => {
               className="w-full"
             />
             {errors.name && (
-              <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
+              <p className="text-red-500 text-sm mt-1">{errors.name.message?.toString()}</p>
             )}
           </div>
 
@@ -91,7 +91,7 @@ const RegisterForm = () => {
               className="w-full"
             />
             {errors.email && (
-              <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+              <p className="text-red-500 text-sm mt-1">{errors.email.message?.toString()}</p>
             )}
           </div>
 
@@ -104,7 +104,7 @@ const RegisterForm = () => {
               className="w-full"
             />
             {errors.password && (
-              <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
+              <p className="text-red-500 text-sm mt-1">{errors.password.message?.toString()}</p>
             )}
           </div>
 
