@@ -161,10 +161,10 @@ export const BingoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return;
     }
 
-    const formattedPlayers = gamePlayers.map(gp => ({
+    const formattedPlayers: Player[] = gamePlayers.map(gp => ({
       id: gp.player_id,
       name: gp.users.name,
-      card: gp.board
+      card: gp.board as number[][] // Type assertion here is safe because we know the structure from our database
     }));
 
     setPlayers(formattedPlayers);
