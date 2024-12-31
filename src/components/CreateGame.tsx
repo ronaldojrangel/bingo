@@ -49,17 +49,17 @@ const CreateGame = () => {
         return;
       }
 
-      // Limpar localStorage de jogos anteriores
+      // Clear localStorage of previous games
       localStorage.removeItem('bingo_players');
       localStorage.removeItem('bingo_drawn_numbers');
       localStorage.removeItem('bingo_current_number');
       localStorage.removeItem('bingo_winners');
       localStorage.removeItem('bingo_current_player');
 
-      // Gerar novo código do jogo
+      // Generate new game code
       const gameCode = Math.floor(10000000 + Math.random() * 90000000).toString();
 
-      // Criar novo jogo no Supabase
+      // Create new game in Supabase with explicit admin_id
       const { error: gameError } = await supabase
         .from('bingo_games')
         .insert([
@@ -69,7 +69,7 @@ const CreateGame = () => {
             max_winners: Number(maxWinners),
             win_condition: winCondition,
             status: 'waiting',
-            admin_id: userId // Add the admin_id
+            admin_id: userId // Explicitly set admin_id to the current user's ID
           }
         ]);
 
@@ -78,7 +78,7 @@ const CreateGame = () => {
         throw new Error(gameError.message);
       }
 
-      // Configurar o novo jogo no contexto
+      // Set up the new game in context
       setContextGameCode(gameCode);
       setGameType(type);
       setIsAdmin(true);
@@ -86,7 +86,7 @@ const CreateGame = () => {
       setContextWinCondition(winCondition);
       setGameState('waiting');
 
-      // Adicionar o administrador como um usuário
+      // Add the administrator as a user
       await addPlayer('Administrador');
 
       toast({
@@ -94,7 +94,7 @@ const CreateGame = () => {
         description: `Seu código do jogo é: ${gameCode}`,
       });
 
-      // Navegar para a página de admin
+      // Navigate to admin page
       navigate('/admin');
     } catch (error: any) {
       console.error('Error creating game:', error);
