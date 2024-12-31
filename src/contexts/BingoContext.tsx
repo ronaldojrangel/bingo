@@ -175,7 +175,18 @@ export const BingoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const addPlayer = async (name: string) => {
     try {
-      // First, create or get user
+      if (!gameCode) return;
+
+      // First, get the game's UUID using the code
+      const { data: gameData, error: gameError } = await supabase
+        .from('bingo_games')
+        .select('id')
+        .eq('code', gameCode)
+        .single();
+
+      if (gameError) throw gameError;
+
+      // Then, create or get user
       const { data: userData, error: userError } = await supabase
         .from('users')
         .upsert([
@@ -186,12 +197,12 @@ export const BingoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       if (userError) throw userError;
 
-      // Then, add player to game
+      // Now add player to game using the game's UUID
       const { error: gamePlayerError } = await supabase
         .from('game_players')
         .insert([
           {
-            game_id: gameCode,
+            game_id: gameData.id, // Use the UUID instead of the code
             player_id: userData.id,
             board: generateBingoCard(gameType === '75' ? 75 : 90)
           }
