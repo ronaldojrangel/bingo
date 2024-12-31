@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 const CreateGame = () => {
   const [maxWinners, setMaxWinners] = useState("1");
   const [winCondition, setWinCondition] = useState<"line" | "column" | "full">("line");
+  const [userId, setUserId] = useState<string | null>(null);
   const {
     setGameType,
     setGameCode: setContextGameCode,
@@ -28,8 +29,35 @@ const CreateGame = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: "Não autorizado",
+          description: "Você precisa estar logado para criar um jogo",
+          variant: "destructive",
+        });
+        navigate('/login');
+        return;
+      }
+      setUserId(session.user.id);
+    };
+
+    checkAuth();
+  }, [navigate, toast]);
+
   const handleCreateGame = async (type: "75" | "90") => {
     try {
+      if (!userId) {
+        toast({
+          title: "Erro",
+          description: "Você precisa estar logado para criar um jogo",
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Limpar localStorage de jogos anteriores
       localStorage.removeItem('bingo_players');
       localStorage.removeItem('bingo_drawn_numbers');
@@ -49,11 +77,15 @@ const CreateGame = () => {
             type,
             max_winners: Number(maxWinners),
             win_condition: winCondition,
-            status: 'waiting'
+            status: 'waiting',
+            admin_id: userId // Add the admin_id
           }
         ]);
 
-      if (gameError) throw gameError;
+      if (gameError) {
+        console.error('Supabase error:', gameError);
+        throw new Error(gameError.message);
+      }
 
       // Configurar o novo jogo no contexto
       setContextGameCode(gameCode);
@@ -82,6 +114,10 @@ const CreateGame = () => {
       });
     }
   };
+
+  if (!userId) {
+    return null; // Don't render anything while checking authentication
+  }
 
   return (
     <div className="min-h-screen bg-bingo-background p-4 flex items-center justify-center">
