@@ -1,6 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { generateBingoCard } from '@/utils/bingoUtils';
-import { GameType, GameState, Player, WinCondition } from '../types/game';
+import { GameType, GameState, Player } from '../types/game';
 import { useToast } from '@/hooks/use-toast';
 
 interface GameActionsProps {
@@ -10,10 +10,12 @@ interface GameActionsProps {
   gameState: GameState;
   winners: string[];
   maxWinners: number;
+  drawnNumbers: number[];  // Added missing prop
   setGameState: (state: GameState) => void;
   setPlayers: (players: Player[]) => void;
   setCurrentNumber: (number: number | null) => void;
   setDrawnNumbers: (numbers: number[]) => void;
+  setWinners: (winners: string[]) => void;  // Added missing prop
 }
 
 export const useGameActions = ({
@@ -23,10 +25,12 @@ export const useGameActions = ({
   gameState,
   winners,
   maxWinners,
+  drawnNumbers,
   setGameState,
   setPlayers,
   setCurrentNumber,
   setDrawnNumbers,
+  setWinners,
 }: GameActionsProps) => {
   const { toast } = useToast();
 
@@ -215,7 +219,7 @@ export const useGameActions = ({
 
   const addWinner = (playerId: string) => {
     if (winners.length < maxWinners) {
-      setWinners(prev => [...prev, playerId]);
+      setWinners([...winners, playerId]);
       if (winners.length + 1 >= maxWinners) {
         finishGame();
       }

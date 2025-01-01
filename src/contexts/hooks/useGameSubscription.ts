@@ -1,11 +1,10 @@
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Player } from '../types/game';
 
 interface GameSubscriptionProps {
   gameCode: string | null;
   setCurrentNumber: (number: number | null) => void;
-  setDrawnNumbers: (prev: number[]) => number[];
+  setDrawnNumbers: (numbers: number[]) => void;
   fetchPlayers: () => Promise<void>;
 }
 
@@ -28,8 +27,8 @@ export const useGameSubscription = ({
           table: 'game_players',
           filter: `game_id=eq.${gameCode}`,
         },
-        (payload) => {
-          console.log('Game players update:', payload);
+        () => {
+          console.log('Game players update received');
           fetchPlayers();
         }
       )
@@ -45,7 +44,7 @@ export const useGameSubscription = ({
           console.log('New number drawn:', payload);
           const newNumber = payload.new.number;
           setCurrentNumber(newNumber);
-          setDrawnNumbers(prev => [...prev, newNumber]);
+          setDrawnNumbers((prev: number[]) => [...prev, newNumber]);
         }
       )
       .subscribe();
