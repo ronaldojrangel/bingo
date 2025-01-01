@@ -41,7 +41,10 @@ const JoinGame = () => {
                 description: "Aguardando o administrador para iniciar o jogo",
             });
 
-            navigate('/game');
+            // Redirect to home page after showing the toast
+            setTimeout(() => {
+                navigate('/');
+            }, 2000);
         } catch (error: any) {
             toast({
                 title: "Erro ao Entrar",

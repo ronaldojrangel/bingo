@@ -45,6 +45,7 @@ export const useGamePlayers = ({ gameCode, isAdmin, gameType }: UseGamePlayersPr
           player_id,
           board,
           users (
+            id,
             name
           )
         `)
