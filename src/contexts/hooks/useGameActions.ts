@@ -10,12 +10,12 @@ interface GameActionsProps {
   gameState: GameState;
   winners: string[];
   maxWinners: number;
-  drawnNumbers: number[];  // Added missing prop
+  drawnNumbers: number[];
   setGameState: (state: GameState) => void;
   setPlayers: (players: Player[]) => void;
   setCurrentNumber: (number: number | null) => void;
   setDrawnNumbers: (numbers: number[]) => void;
-  setWinners: (winners: string[]) => void;  // Added missing prop
+  setWinners: (winners: string[]) => void;
 }
 
 export const useGameActions = ({
@@ -35,20 +35,30 @@ export const useGameActions = ({
   const { toast } = useToast();
 
   const fetchPlayers = async () => {
-    if (!gameCode) return;
+    if (!gameCode) {
+      console.log('No game code provided');
+      return;
+    }
 
     try {
+      console.log('Fetching game with code:', gameCode);
       const { data: gameData, error: gameError } = await supabase
         .from('bingo_games')
         .select('id')
         .eq('code', gameCode)
         .maybeSingle();
 
-      if (gameError) throw gameError;
+      if (gameError) {
+        console.error('Error fetching game:', gameError);
+        throw gameError;
+      }
+      
       if (!gameData) {
-        console.error('Game not found');
+        console.error('Game not found with code:', gameCode);
         return;
       }
+
+      console.log('Found game:', gameData);
 
       const { data: gamePlayers, error } = await supabase
         .from('game_players')
@@ -81,8 +91,12 @@ export const useGameActions = ({
 
   const addPlayer = async (name: string) => {
     try {
-      if (!gameCode) return;
+      if (!gameCode) {
+        throw new Error('No game code provided');
+      }
 
+      console.log('Adding player to game with code:', gameCode);
+      
       const { data: gameData, error: gameError } = await supabase
         .from('bingo_games')
         .select('id')
@@ -90,9 +104,13 @@ export const useGameActions = ({
         .maybeSingle();
 
       if (gameError) throw gameError;
+      
       if (!gameData) {
+        console.error('Game not found with code:', gameCode);
         throw new Error('Game not found');
       }
+
+      console.log('Found game:', gameData);
 
       const { data: userData, error: userError } = await supabase
         .from('users')
@@ -103,6 +121,8 @@ export const useGameActions = ({
         .single();
 
       if (userError) throw userError;
+
+      console.log('User created/updated:', userData);
 
       const { error: gamePlayerError } = await supabase
         .from('game_players')
@@ -129,6 +149,7 @@ export const useGameActions = ({
         description: error.message,
         variant: "destructive",
       });
+      throw error;
     }
   };
 
