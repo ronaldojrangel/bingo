@@ -22,7 +22,7 @@ export interface BingoContextType {
   setGameState: (state: GameState) => void;
   setGameCode: (code: string) => void;
   setIsAdmin: (isAdmin: boolean) => void;
-  addPlayer: (name: string) => Promise<void>;
+  addPlayer: (name: string) => Promise<Player[]>;
   drawNumber: () => Promise<void>;
   addWinner: (playerId: string) => void;
   setMaxWinners: (count: number) => void;

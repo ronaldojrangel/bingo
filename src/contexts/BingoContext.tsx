@@ -10,7 +10,7 @@ interface BingoContextType extends GameContextState {
   setGameState: (state: GameState) => void;
   setGameCode: (code: string) => void;
   setIsAdmin: (isAdmin: boolean) => void;
-  addPlayer: (name: string) => Promise<void>;
+  addPlayer: (name: string) => Promise<Player[]>;
   drawNumber: () => Promise<void>;
   addWinner: (playerId: string) => void;
   setMaxWinners: (count: number) => void;
@@ -55,7 +55,11 @@ export const BingoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setIsAdmin: (isAdmin: boolean) => state.isAdmin = isAdmin,
     setMaxWinners: (count: number) => state.maxWinners = count,
     setWinCondition: (condition: WinCondition) => state.winCondition = condition,
-    addPlayer,
+    addPlayer: async (name: string) => {
+      const players = await addPlayer(name);
+      state.players = players;
+      return players;
+    },
     drawNumber,
     addWinner,
     startGame,
