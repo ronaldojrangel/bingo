@@ -13,7 +13,7 @@ const JoinGame = () => {
     const { toast } = useToast();
     const navigate = useNavigate();
 
-    const handleJoinGame = () => {
+    const handleJoinGame = async () => {
         if (gameCode.length !== 8 || !/^\d+$/.test(gameCode)) {
             toast({
                 title: "Código Inválido",
@@ -34,21 +34,21 @@ const JoinGame = () => {
         try {
             setContextGameCode(gameCode);
             setIsAdmin(false);
-            addPlayer(playerName);
+            await addPlayer(playerName);
             
             toast({
                 title: "Entrando no Jogo",
                 description: "Aguardando o administrador para iniciar o jogo",
             });
 
-            // Redirecionar para a página do jogo
             navigate('/game');
-        } catch (error) {
+        } catch (error: any) {
             toast({
                 title: "Erro ao Entrar",
-                description: "Não foi possível entrar no jogo. Verifique o código e tente novamente.",
+                description: error.message || "Não foi possível entrar no jogo. Verifique o código e tente novamente.",
                 variant: "destructive",
             });
+            setContextGameCode(null);
         }
     };
 
