@@ -8,7 +8,6 @@ import { Toaster } from '@/components/ui/toaster';
 const BingoContext = createContext<BingoContextType | undefined>(undefined);
 
 export const BingoProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Move useToast inside the component
   const { toast } = useToast();
   
   const [gameType, setGameType] = useState<GameType | null>(() => {
@@ -118,7 +117,6 @@ export const BingoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         },
         (payload) => {
           console.log('Game players update:', payload);
-          // Update players list
           fetchPlayers();
         }
       )
@@ -139,6 +137,9 @@ export const BingoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       )
       .subscribe();
 
+    // Initial fetch of players
+    fetchPlayers();
+
     return () => {
       supabase.removeChannel(channel);
     };
@@ -147,30 +148,46 @@ export const BingoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const fetchPlayers = async () => {
     if (!gameCode) return;
 
-    const { data: gamePlayers, error } = await supabase
-      .from('game_players')
-      .select(`
-        id,
-        player_id,
-        board,
-        users (
-          name
-        )
-      `)
-      .eq('game_id', gameCode);
+    try {
+      const { data: gameData, error: gameError } = await supabase
+        .from('bingo_games')
+        .select('id')
+        .eq('code', gameCode)
+        .maybeSingle();
 
-    if (error) {
-      console.error('Error fetching players:', error);
-      return;
+      if (gameError) throw gameError;
+      if (!gameData) {
+        console.error('Game not found');
+        return;
+      }
+
+      const { data: gamePlayers, error } = await supabase
+        .from('game_players')
+        .select(`
+          id,
+          player_id,
+          board,
+          users (
+            name
+          )
+        `)
+        .eq('game_id', gameData.id);
+
+      if (error) {
+        console.error('Error fetching players:', error);
+        return;
+      }
+
+      const formattedPlayers: Player[] = gamePlayers.map(gp => ({
+        id: gp.player_id,
+        name: gp.users.name,
+        card: gp.board as number[][]
+      }));
+
+      setPlayers(formattedPlayers);
+    } catch (error: any) {
+      console.error('Error in fetchPlayers:', error);
     }
-
-    const formattedPlayers: Player[] = gamePlayers.map(gp => ({
-      id: gp.player_id,
-      name: gp.users.name,
-      card: gp.board as number[][] // Type assertion here is safe because we know the structure from our database
-    }));
-
-    setPlayers(formattedPlayers);
   };
 
   const addPlayer = async (name: string) => {
@@ -182,9 +199,12 @@ export const BingoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         .from('bingo_games')
         .select('id')
         .eq('code', gameCode)
-        .single();
+        .maybeSingle();
 
       if (gameError) throw gameError;
+      if (!gameData) {
+        throw new Error('Game not found');
+      }
 
       // Then, create or get user
       const { data: userData, error: userError } = await supabase
@@ -202,7 +222,7 @@ export const BingoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         .from('game_players')
         .insert([
           {
-            game_id: gameData.id, // Use the UUID instead of the code
+            game_id: gameData.id,
             player_id: userData.id,
             board: generateBingoCard(gameType === '75' ? 75 : 90)
           }
