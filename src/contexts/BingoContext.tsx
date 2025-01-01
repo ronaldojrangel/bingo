@@ -55,11 +55,7 @@ export const BingoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setIsAdmin: (isAdmin: boolean) => state.isAdmin = isAdmin,
     setMaxWinners: (count: number) => state.maxWinners = count,
     setWinCondition: (condition: WinCondition) => state.winCondition = condition,
-    addPlayer: async (name: string) => {
-      const players = await addPlayer(name);
-      state.players = players;
-      return players;
-    },
+    addPlayer,
     drawNumber,
     addWinner,
     startGame,
