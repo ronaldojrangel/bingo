@@ -37,6 +37,7 @@ export const BingoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setPlayers: (players) => state.players = players,
     setCurrentNumber: (number) => state.currentNumber = number,
     setDrawnNumbers: (numbers) => state.drawnNumbers = numbers,
+    setWinners: (winners) => state.winners = winners,
   });
 
   useGameSubscription({

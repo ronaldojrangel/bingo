@@ -44,7 +44,8 @@ export const useGameSubscription = ({
           console.log('New number drawn:', payload);
           const newNumber = payload.new.number;
           setCurrentNumber(newNumber);
-          setDrawnNumbers((prev: number[]) => [...prev, newNumber]);
+          const updatedNumbers = (prev: number[]) => [...prev, newNumber];
+          setDrawnNumbers(updatedNumbers([]));
         }
       )
       .subscribe();
