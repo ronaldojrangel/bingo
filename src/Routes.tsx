@@ -8,6 +8,7 @@ import Game from './components/Game';
 import RegisterForm from './components/RegisterForm';
 import GameHistory from './components/GameHistory';
 import Login from './components/Login';
+import WaitingRoom from './components/WaitingRoom';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from './integrations/supabase/client';
 
@@ -57,6 +58,7 @@ const Routes = () => {
         }
       />
       <Route path="/join-game" element={<JoinGame />} />
+      <Route path="/waiting-room" element={<WaitingRoom />} />
       <Route
         path="/admin"
         element={

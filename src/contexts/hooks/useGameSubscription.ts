@@ -18,6 +18,28 @@ export const useGameSubscription = ({
   useEffect(() => {
     if (!gameCode) return;
 
+    const fetchInitialData = async () => {
+      // Fetch initial drawn numbers
+      const { data: numbersData } = await supabase
+        .from('numbers_drawn')
+        .select('number')
+        .eq('game_id', gameCode)
+        .order('drawn_at', { ascending: true });
+
+      if (numbersData) {
+        const numbers = numbersData.map(row => row.number);
+        setDrawnNumbers(numbers);
+        if (numbers.length > 0) {
+          setCurrentNumber(numbers[numbers.length - 1]);
+        }
+      }
+
+      // Fetch initial players
+      await fetchPlayers();
+    };
+
+    fetchInitialData();
+
     const channel = supabase
       .channel('game-updates')
       .on(

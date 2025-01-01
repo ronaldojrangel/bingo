@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 const JoinGame = () => {
     const [gameCode, setGameCode] = useState('');
     const [playerName, setPlayerName] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
     const { setGameCode: setContextGameCode, setIsAdmin, addPlayer } = useBingo();
     const { toast } = useToast();
     const navigate = useNavigate();
@@ -31,9 +32,14 @@ const JoinGame = () => {
             return;
         }
 
+        setIsLoading(true);
+
         try {
+            // Primeiro definimos o código do jogo e o status de admin
             setContextGameCode(gameCode);
             setIsAdmin(false);
+
+            // Então adicionamos o jogador e esperamos a conclusão
             await addPlayer(playerName);
             
             toast({
@@ -41,10 +47,8 @@ const JoinGame = () => {
                 description: "Aguardando o administrador para iniciar o jogo",
             });
 
-            // Redirect to home page after showing the toast
-            setTimeout(() => {
-                navigate('/');
-            }, 2000);
+            // Só redirecionamos após o jogador ser adicionado com sucesso
+            navigate('/waiting-room');
         } catch (error: any) {
             toast({
                 title: "Erro ao Entrar",
@@ -52,6 +56,8 @@ const JoinGame = () => {
                 variant: "destructive",
             });
             setContextGameCode(null);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -73,18 +79,21 @@ const JoinGame = () => {
                         }}
                         maxLength={8}
                         className="text-center"
+                        disabled={isLoading}
                     />
                     <Input
                         placeholder="Seu nome"
                         value={playerName}
                         onChange={(e) => setPlayerName(e.target.value)}
                         className="text-center"
+                        disabled={isLoading}
                     />
                     <Button
                         onClick={handleJoinGame}
                         className="w-full bg-bingo-header text-white hover:bg-bingo-header/90"
+                        disabled={isLoading}
                     >
-                        Entrar
+                        {isLoading ? "Entrando..." : "Entrar"}
                     </Button>
                 </CardContent>
             </Card>
