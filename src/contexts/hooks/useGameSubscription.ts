@@ -1,11 +1,12 @@
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { Player } from '../types/game';
 
 interface GameSubscriptionProps {
   gameCode: string | null;
   setCurrentNumber: (number: number | null) => void;
   setDrawnNumbers: (numbers: number[]) => void;
-  fetchPlayers: () => Promise<void>;
+  fetchPlayers: () => Promise<Player[] | undefined>;
 }
 
 export const useGameSubscription = ({
@@ -22,39 +23,40 @@ export const useGameSubscription = ({
       .on(
         'postgres_changes',
         {
-          event: '*',
-          schema: 'public',
-          table: 'game_players',
-          filter: `game_id=eq.${gameCode}`,
-        },
-        () => {
-          console.log('Game players update received');
-          fetchPlayers();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
           event: 'INSERT',
           schema: 'public',
           table: 'numbers_drawn',
           filter: `game_id=eq.${gameCode}`,
         },
-        (payload: any) => {
-          console.log('New number drawn:', payload);
-          const newNumber = payload.new.number;
-          setCurrentNumber(newNumber);
-          const updatedNumbers = (prev: number[]) => [...prev, newNumber];
-          setDrawnNumbers(updatedNumbers([]));
+        async (payload: any) => {
+          setCurrentNumber(payload.new.number);
+          const { data } = await supabase
+            .from('numbers_drawn')
+            .select('number')
+            .eq('game_id', gameCode)
+            .order('drawn_at', { ascending: true });
+          
+          if (data) {
+            setDrawnNumbers(data.map(row => row.number));
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'game_players',
+          filter: `game_id=eq.${gameCode}`,
+        },
+        async () => {
+          await fetchPlayers();
         }
       )
       .subscribe();
 
-    // Initial fetch of players
-    fetchPlayers();
-
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [gameCode, fetchPlayers, setCurrentNumber, setDrawnNumbers]);
+  }, [gameCode, setCurrentNumber, setDrawnNumbers, fetchPlayers]);
 };
