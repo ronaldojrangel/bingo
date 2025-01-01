@@ -2,7 +2,7 @@ import React, { createContext, useContext } from 'react';
 import { useGameState } from './hooks/useGameState';
 import { useGameActions } from './hooks/useGameActions';
 import { useGameSubscription } from './hooks/useGameSubscription';
-import { GameContextState, GameType, GameState, WinCondition } from './types/game';
+import { GameContextState, GameType, GameState, WinCondition, Player } from './types/game';
 import { Toaster } from '@/components/ui/toaster';
 
 interface BingoContextType extends GameContextState {
